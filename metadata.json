@@ -1,0 +1,6 @@
+{
+  "name": "Memórias da TV",
+  "description": "Portal completo de nostalgia, história da televisão brasileira, segredos dos famosos, novelas clássicas e ferramentas administrativas completas com estatísticas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
