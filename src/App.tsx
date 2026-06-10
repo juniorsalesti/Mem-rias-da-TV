@@ -62,19 +62,13 @@ export default function App() {
 
   // --- CMS Admin Authentication states ---
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
-    const saved = localStorage.getItem('mtv_admin_users');
-    const parsed = saved ? JSON.parse(saved) : [];
-    // Garantir que o administrador existente permaneça e seja pré-carregado como padrão se o Storage estiver limpo
-    if (parsed.length === 0) {
-      const defaultAdmin: AdminUser = {
-        email: 'admin@memoriasdatv.com.br',
-        passwordHash: 'sbt90',
-        createdAt: new Date().toISOString()
-      };
-      localStorage.setItem('mtv_admin_users', JSON.stringify([defaultAdmin]));
-      return [defaultAdmin];
-    }
-    return parsed;
+    const singleAdmin: AdminUser = {
+      email: 'juniorsalesti@gmail.com',
+      passwordHash: 'Silvio@020592',
+      createdAt: '2026-06-10T22:11:00.000Z'
+    };
+    localStorage.setItem('mtv_admin_users', JSON.stringify([singleAdmin]));
+    return [singleAdmin];
   });
 
   const [adminSession, setAdminSession] = useState<{ email: string; token: string; expiresAt: number } | null>(() => {
