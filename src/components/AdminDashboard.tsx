@@ -132,7 +132,7 @@ export default function AdminDashboard({
             <h3 className="font-sans font-bold text-sm text-white">Central Administrativa</h3>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-1 gap-1.5">
             {sidebarItems.map((item) => (
               <button
                 key={item.id}
@@ -149,7 +149,7 @@ export default function AdminDashboard({
             ))}
           </nav>
 
-          <div className="border-t border-neutral-800 mt-6 pt-4 space-y-2">
+          <div className="border-t border-neutral-800 mt-6 pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
             <button
               onClick={() => setIsLoggedIn(false)}
               className="w-full bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-white py-2 rounded text-xs font-bold font-sans flex items-center justify-center gap-1.5 transition cursor-pointer"
@@ -159,7 +159,7 @@ export default function AdminDashboard({
             </button>
             <button
               onClick={onExit}
-              className="w-full text-center text-[10px] text-neutral-500 hover:text-amber-400 transition underline block"
+              className="w-full text-center text-[10px] text-neutral-400 hover:text-amber-400 py-2 border border-dashed border-neutral-800 rounded sm:border-none hover:underline transition block"
             >
               Retornar ao Portal Público
             </button>
@@ -167,7 +167,7 @@ export default function AdminDashboard({
         </div>
 
         {/* Console stats widgets */}
-        <div className="bg-neutral-900/40 border border-neutral-800 rounded-lg p-4 font-mono text-[10px] text-neutral-500 space-y-1">
+        <div className="hidden lg:block bg-neutral-900/40 border border-neutral-800 rounded-lg p-4 font-mono text-[10px] text-neutral-500 space-y-1">
           <p className="flex items-center gap-1.5 text-amber-400 font-sans font-bold text-xs uppercase mb-2">
             <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
             <span>Console Log</span>

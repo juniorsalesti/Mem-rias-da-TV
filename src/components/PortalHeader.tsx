@@ -164,7 +164,29 @@ export default function PortalHeader({
 
       {/* Mobile Menu Overlay Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 top-[84px] bg-[#010f25]/95 backdrop-blur-sm z-50 animate-fade-in flex flex-col md:hidden p-6 gap-6 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#010f25] z-50 animate-fade-in flex flex-col md:hidden p-6 gap-6 overflow-y-auto">
+          {/* Header row with site name and close button */}
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded bg-amber-500 flex items-center justify-center">
+                <Tv className="w-5 h-5 text-neutral-950" />
+              </div>
+              <div>
+                <h4 className="text-sm font-heading font-black tracking-tight text-white uppercase leading-none">
+                  Memórias <span className="text-amber-400 font-serif lowercase italic font-medium">da</span> TV
+                </h4>
+                <span className="text-[9px] text-[#9ab0d7] font-mono tracking-widest uppercase font-bold">Navegação de Época</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-1.5 px-3 rounded bg-neutral-900 border border-neutral-850 text-neutral-300 hover:text-white hover:bg-neutral-800 cursor-pointer text-xs flex items-center gap-1.5 transition"
+            >
+              <X className="w-4 h-4" />
+              <span className="font-bold">Fechar</span>
+            </button>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-3.5 w-4 h-4 text-neutral-400" />
             <input

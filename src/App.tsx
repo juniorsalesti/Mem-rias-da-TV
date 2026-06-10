@@ -88,6 +88,23 @@ export default function App() {
     localStorage.setItem('mtv_events', JSON.stringify(events));
   }, [events]);
 
+  // Sync site name "Memórias da TV" and current view details into the browser tab title
+  useEffect(() => {
+    if (adminMode && currentView === 'admin') {
+      document.title = 'Painel de Controle | Memórias da TV';
+    } else if (currentView === 'home') {
+      document.title = 'Memórias da TV - O Portal da Nostalgia da Televisão Brasileira';
+    } else if (currentView === 'category' && selectedCategory) {
+      document.title = `${selectedCategory} | Memórias da TV`;
+    } else if (currentView === 'article' && activeArticle) {
+      document.title = `${activeArticle.title} | Memórias da TV`;
+    } else if (currentView === 'contato') {
+      document.title = 'Fale Conosco | Memórias da TV';
+    } else {
+      document.title = 'Memórias da TV - O Portal da Nostalgia da Televisão Brasileira';
+    }
+  }, [currentView, selectedCategory, activeArticle, adminMode]);
+
   // --- Telemetry Event Tracker ---
   const trackEvent = (type: PortalEvent['type'], payload: Partial<PortalEvent>) => {
     let visitorId = sessionStorage.getItem('mtv_visitor_id');
