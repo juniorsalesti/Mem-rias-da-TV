@@ -16,7 +16,7 @@ import AdSensePlaceholder from './components/AdSensePlaceholder';
 import NewsletterBox from './components/NewsletterBox';
 import AdminDashboard from './components/AdminDashboard';
 
-import { Article, Comment, NewsletterSubscriber, CategorySpec, PortalEvent } from './types';
+import { Article, Comment, NewsletterSubscriber, CategorySpec, PortalEvent, AdsSettings, AdminUser } from './types';
 import { INITIAL_ARTICLES, CATEGORIES, MOCK_REVIEWS } from './data/seedData';
 
 export default function App() {
@@ -47,12 +47,40 @@ export default function App() {
   });
 
   // --- UI/Routing State ---
-  const [currentView, setCurrentView] = useState<'home' | 'category' | 'article' | 'contato' | 'admin'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'category' | 'article' | 'contato' | 'admin' | 'login'>('home');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeArticle, setActiveArticle] = useState<Article | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSimulatedAds, setShowSimulatedAds] = useState(false);
   const [adminMode, setAdminMode] = useState(false);
+
+  // --- Global Monetization settings state ---
+  const [adsSettings, setAdsSettings] = useState<AdsSettings>(() => {
+    const saved = localStorage.getItem('mtv_ads_settings');
+    return saved ? JSON.parse(saved) : { publisherId: '', globalCode: '', isEnabled: false };
+  });
+
+  // --- CMS Admin Authentication states ---
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
+    const saved = localStorage.getItem('mtv_admin_users');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [adminSession, setAdminSession] = useState<{ email: string; token: string; expiresAt: number } | null>(() => {
+    const saved = localStorage.getItem('mtv_admin_session');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.expiresAt > Date.now()) {
+          return parsed;
+        }
+      } catch (e) {
+        // ignore
+      }
+      localStorage.removeItem('mtv_admin_session');
+    }
+    return null;
+  });
 
   // --- Article Comments Submission form ---
   const [commentName, setCommentName] = useState('');
@@ -88,10 +116,39 @@ export default function App() {
     localStorage.setItem('mtv_events', JSON.stringify(events));
   }, [events]);
 
+  useEffect(() => {
+    localStorage.setItem('mtv_ads_settings', JSON.stringify(adsSettings));
+  }, [adsSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('mtv_admin_users', JSON.stringify(adminUsers));
+  }, [adminUsers]);
+
+  useEffect(() => {
+    if (adminSession) {
+      localStorage.setItem('mtv_admin_session', JSON.stringify(adminSession));
+    } else {
+      localStorage.removeItem('mtv_admin_session');
+    }
+  }, [adminSession]);
+
+  // Expire session actively on interval or tick change
+  useEffect(() => {
+    if (adminSession && adminSession.expiresAt <= Date.now()) {
+      setAdminSession(null);
+      if (currentView === 'admin') {
+        setCurrentView('login');
+        setAdminMode(false);
+      }
+    }
+  }, [currentView, adminSession]);
+
   // Sync site name "Memórias da TV" and current view details into the browser tab title
   useEffect(() => {
     if (adminMode && currentView === 'admin') {
       document.title = 'Painel de Controle | Memórias da TV';
+    } else if (currentView === 'login') {
+      document.title = 'Login Administrativo | Memórias da TV';
     } else if (currentView === 'home') {
       document.title = 'Memórias da TV - O Portal da Nostalgia da Televisão Brasileira';
     } else if (currentView === 'category' && selectedCategory) {
@@ -286,18 +343,37 @@ export default function App() {
       setAdminMode(false);
       trackEvent('page_view', {});
     } else if (view === 'admin') {
-      setCurrentView('admin');
-      setAdminMode(true);
+      if (adminSession && adminSession.expiresAt > Date.now()) {
+        setCurrentView('admin');
+        setAdminMode(true);
+      } else {
+        setCurrentView('login');
+        setAdminMode(false);
+      }
+    } else if (view === 'login') {
+      if (adminSession && adminSession.expiresAt > Date.now()) {
+        setCurrentView('admin');
+        setAdminMode(true);
+      } else {
+        setCurrentView('login');
+        setAdminMode(false);
+      }
     }
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const handleToggleAdmin = () => {
-    if (adminMode) {
+    if (adminMode && currentView === 'admin') {
       handleNavigate('home');
     } else {
       handleNavigate('admin');
     }
+  };
+
+  const handleLogout = () => {
+    setAdminSession(null);
+    setAdminMode(false);
+    setCurrentView('home');
   };
 
   // --- Database modifications ---
@@ -501,6 +577,8 @@ export default function App() {
             comments={comments}
             subscribers={subscribers}
             events={events}
+            adsSettings={adsSettings}
+            onSaveAdsSettings={setAdsSettings}
             onAddArticle={handleAddArticle}
             onEditArticle={handleEditArticle}
             onDeleteArticle={handleDeleteArticle}
@@ -512,7 +590,160 @@ export default function App() {
             onToggleAds={() => setShowSimulatedAds(!showSimulatedAds)}
             onExit={() => handleNavigate('home')}
             onSimulateTraffic={simulateInteractiveTraffic}
+            onLogout={handleLogout}
           />
+        ) : currentView === 'login' ? (
+          /* --- Login & Primeiro Admin CMS --- */
+          <div className="max-w-md mx-auto my-12 bg-neutral-900 border border-neutral-800 rounded-xl p-6 sm:p-8 shadow-2xl space-y-6 text-white animate-scale-up text-xs">
+            {adminUsers.length === 0 ? (
+              <div className="space-y-5">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-amber-500/20">
+                    <ShieldEllipsis className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <h2 className="text-base font-sans font-black uppercase tracking-wider text-white">Criar Primeiro Admin</h2>
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    Nenhum administrador registrado. Crie as credenciais securizadas de acesso ao CMS do portal Memórias da TV.
+                  </p>
+                </div>
+
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.target as any;
+                  const email = target.email.value.trim();
+                  const password = target.password.value;
+                  const confirmPassword = target.confirmPassword.value;
+
+                  if (!email || !password) return;
+                  if (password.length < 5) {
+                    alert('A senha deve conter ao menos 5 caracteres.');
+                    return;
+                  }
+                  if (password !== confirmPassword) {
+                    alert('As senhas não coincidem!');
+                    return;
+                  }
+
+                  const newUser: AdminUser = {
+                    email,
+                    passwordHash: password,
+                    createdAt: new Date().toISOString()
+                  };
+
+                  setAdminUsers([newUser]);
+                  alert('Administrador principal criado perfeitamente! Efetue o logon a seguir.');
+                }} className="space-y-3.5">
+                  <div>
+                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold">E-mail administrativo</label>
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      placeholder="Ex: portal@memoriasdatv.com.br"
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 font-mono text-center"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold">Senha de Acesso</label>
+                    <input
+                      type="password"
+                      name="password"
+                      required
+                      placeholder="Ao menos 5 caracteres..."
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 text-center"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold">Confirme a Senha</label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      required
+                      placeholder="Redigite a mesma senha..."
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 text-center"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold py-2.5 rounded text-xs transition uppercase cursor-pointer"
+                  >
+                    Registrar Administrador
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-amber-500/20">
+                    <ShieldEllipsis className="w-6 h-6 text-amber-400 animate-pulse" />
+                  </div>
+                  <h2 className="text-base font-sans font-black uppercase tracking-wider text-white">Login CMS Restrito</h2>
+                  <p className="text-[11px] text-neutral-400 mt-1">Conecte-se com sua conta administrativa de administrador do portal.</p>
+                </div>
+
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.target as any;
+                  const email = target.email.value.trim();
+                  const password = target.password.value;
+
+                  const matchedUser = adminUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.passwordHash === password);
+                  
+                  if (matchedUser) {
+                    const expires = Date.now() + 60 * 60 * 1000; // Sessão de 1 HORA
+                    const sessionData = {
+                      email: matchedUser.email,
+                      token: 'mtv_jwt_tkn_' + Math.random().toString(36).substring(2, 11),
+                      expiresAt: expires
+                    };
+                    setAdminSession(sessionData);
+                    setAdminMode(true);
+                    setCurrentView('admin');
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                  } else {
+                    alert('Usuário ou senha inválidos!');
+                  }
+                }} className="space-y-4">
+                  <div>
+                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold font-sans">Endereço de E-mail</label>
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      placeholder="Ex: portal@memoriasdatv.com.br"
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 font-mono text-center text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold font-sans">Senha</label>
+                    <input
+                      type="password"
+                      name="password"
+                      required
+                      placeholder="Sua senha secreta..."
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 text-center text-xs"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold py-2.5 rounded text-xs transition uppercase tracking-wide cursor-pointer"
+                  >
+                    Entrar
+                  </button>
+                </form>
+              </div>
+            )}
+
+            <div className="pt-3 border-t border-neutral-800 text-center">
+              <button 
+                type="button" 
+                onClick={() => handleNavigate('home')}
+                className="text-xs text-neutral-400 hover:text-white underline cursor-pointer"
+              >
+                Voltar ao Portal Público
+              </button>
+            </div>
+          </div>
         ) : currentView === 'article' && activeArticle ? (
           /* --- Detailed Article View --- */
           <div className="space-y-6 animate-fade-in">
@@ -565,7 +796,7 @@ export default function App() {
                 </div>
 
                 {/* AdSense Top Header space */}
-                <AdSensePlaceholder slot="top" showSimulatedAds={showSimulatedAds} />
+                <AdSensePlaceholder slot="top" adsSettings={adsSettings} showSimulatedAds={showSimulatedAds} />
 
                 {/* Featured core Image */}
                 <div className="aspect-video rounded-xl overflow-hidden border border-neutral-800/80 shadow-md">
@@ -630,7 +861,7 @@ export default function App() {
                 </div>
 
                 {/* AdSense bottom banner */}
-                <AdSensePlaceholder slot="bottom" showSimulatedAds={showSimulatedAds} />
+                <AdSensePlaceholder slot="bottom" adsSettings={adsSettings} showSimulatedAds={showSimulatedAds} />
 
                 {/* Floating/Responsive Social Sharing toolbar */}
                 <div className="bg-neutral-950 p-4 rounded-lg border border-neutral-800 mt-6 space-y-3">
@@ -774,7 +1005,7 @@ export default function App() {
               {/* Sidebar Content Right */}
               <aside className="lg:col-span-4 space-y-6">
                 {/* AdSense Sidebar widget */}
-                <AdSensePlaceholder slot="sidebar" height="h-[300px]" showSimulatedAds={showSimulatedAds} />
+                <AdSensePlaceholder slot="sidebar" height="h-[300px]" adsSettings={adsSettings} showSimulatedAds={showSimulatedAds} />
 
                 {/* Newsletter widget */}
                 <NewsletterBox source="sidebar" onSubscribe={handleSubscribe} variant="sidebar" />
@@ -928,7 +1159,7 @@ export default function App() {
             )}
 
             {/* AdSense Top Home spot */}
-            <AdSensePlaceholder slot="top" showSimulatedAds={showSimulatedAds} />
+            <AdSensePlaceholder slot="top" adsSettings={adsSettings} showSimulatedAds={showSimulatedAds} />
 
             {/* Grid display layout */}
             {publicArticles.length === 0 ? (
@@ -974,7 +1205,7 @@ export default function App() {
                 <NewsletterBox source="homepage_middle" onSubscribe={handleSubscribe} />
               </div>
               <div>
-                <AdSensePlaceholder slot="middle" height="h-[180px]" showSimulatedAds={showSimulatedAds} />
+                <AdSensePlaceholder slot="middle" height="h-[180px]" adsSettings={adsSettings} showSimulatedAds={showSimulatedAds} />
               </div>
             </div>
 

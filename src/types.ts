@@ -97,3 +97,16 @@ export interface PortalEvent {
   visitorId: string;
 }
 
+export interface AdsSettings {
+  publisherId: string;
+  globalCode: string;
+  isEnabled: boolean;
+}
+
+export interface AdminUser {
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+}
+
+

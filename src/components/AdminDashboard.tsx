@@ -4,12 +4,12 @@
  */
 
 import React, { useState } from 'react';
-import { BarChart2, LayoutList, MessageSquare, Sparkles, Mail, Settings, ShieldAlert, LogOut, Radio, CheckSquare, Eye } from 'lucide-react';
+import { BarChart2, LayoutList, MessageSquare, Sparkles, Mail, Settings, ShieldAlert, LogOut, Radio, CheckSquare, Eye, CheckCircle2 } from 'lucide-react';
 import InteractiveAnalytics from './InteractiveAnalytics';
 import ArticlesManager from './ArticlesManager';
 import CommentsManager from './CommentsManager';
 import AIPostGenerator from './AIPostGenerator';
-import { Article, CategorySpec, Comment, NewsletterSubscriber, PortalEvent } from '../types';
+import { Article, CategorySpec, Comment, NewsletterSubscriber, PortalEvent, AdsSettings } from '../types';
 
 interface DashboardProps {
   articles: Article[];
@@ -17,6 +17,8 @@ interface DashboardProps {
   comments: Comment[];
   subscribers: NewsletterSubscriber[];
   events?: PortalEvent[];
+  adsSettings: AdsSettings;
+  onSaveAdsSettings: (settings: AdsSettings) => void;
   onAddArticle: (article: Article) => void;
   onEditArticle: (article: Article) => void;
   onDeleteArticle: (id: string) => void;
@@ -28,6 +30,7 @@ interface DashboardProps {
   onToggleAds: () => void;
   onExit: () => void;
   onSimulateTraffic?: () => void;
+  onLogout: () => void;
 }
 
 export default function AdminDashboard({
@@ -36,6 +39,8 @@ export default function AdminDashboard({
   comments,
   subscribers,
   events = [],
+  adsSettings,
+  onSaveAdsSettings,
   onAddArticle,
   onEditArticle,
   onDeleteArticle,
@@ -46,72 +51,30 @@ export default function AdminDashboard({
   showSimulatedAds,
   onToggleAds,
   onExit,
-  onSimulateTraffic
+  onSimulateTraffic,
+  onLogout
 }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'analytics' | 'articles' | 'comments' | 'ai' | 'newsletter' | 'settings'>('analytics');
-  const [password, setPassword] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // Pre-verified admin session
-  const [loginError, setLoginError] = useState(false);
+  
+  // Local state for AdSense monetization settings form
+  const [publisherId, setPublisherId] = useState(adsSettings?.publisherId || '');
+  const [globalCode, setGlobalCode] = useState(adsSettings?.globalCode || '');
+  const [isEnabled, setIsEnabled] = useState(adsSettings?.isEnabled || false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Simple secure prompt Simulation, to mimic WordPress admin gates
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSaveAds = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin' || password === 'sbt90') {
-      setIsLoggedIn(true);
-      setLoginError(false);
-    } else {
-      setLoginError(true);
-    }
+    onSaveAdsSettings({
+      publisherId,
+      globalCode,
+      isEnabled
+    });
+    setSaveSuccess(true);
+    setTimeout(() => {
+      setSaveSuccess(false);
+    }, 4500);
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="max-w-md mx-auto my-16 bg-neutral-900 border border-neutral-800 rounded-xl p-8 shadow-2xl space-y-6 text-white animate-scale-up">
-        <div className="text-center">
-          <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow shadow-amber-500/10">
-            <ShieldAlert className="w-6 h-6 text-neutral-950" />
-          </div>
-          <h2 className="text-xl font-sans font-black uppercase text-white">Acesso Restrito CMS</h2>
-          <p className="text-xs text-neutral-400 mt-1">Por favor, insira a senha administrativa para continuar.</p>
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="text-xs text-neutral-300 block mb-1 font-sans">Senha Administrativa</label>
-            <input
-              type="password"
-              placeholder="Digite 'admin' ou deixe 'sbt90'..."
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full bg-neutral-950 border border-neutral-700 rounded p-3 text-xs text-white focus:outline-none focus:border-amber-500 text-center font-mono tracking-widest"
-            />
-          </div>
-
-          {loginError && (
-            <p className="text-[11px] text-red-400 font-sans text-center">Senha inválida! Destaque: digite "admin" ou "sbt90".</p>
-          )}
-
-          <button
-            type="submit"
-            className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold py-2.5 rounded text-xs transition cursor-pointer"
-          >
-            Verificar Credenciais
-          </button>
-        </form>
-
-        <div className="pt-3 border-t border-neutral-800 text-center">
-          <button 
-            type="button" 
-            onClick={onExit}
-            className="text-xs text-neutral-400 hover:text-white underline"
-          >
-            Voltar ao Portal Público
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const sidebarItems = [
     { id: 'analytics', name: 'Painel de Estatísticas', icon: <BarChart2 className="w-4 h-4" /> },
@@ -151,7 +114,7 @@ export default function AdminDashboard({
 
           <div className="border-t border-neutral-800 mt-6 pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
             <button
-              onClick={() => setIsLoggedIn(false)}
+              onClick={onLogout}
               className="w-full bg-neutral-950 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-white py-2 rounded text-xs font-bold font-sans flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
               <LogOut className="w-3.5" />
@@ -277,56 +240,105 @@ export default function AdminDashboard({
             <div className="border-b border-neutral-800 pb-4">
               <h3 className="text-base font-sans font-bold text-white flex items-center gap-2">
                 <Settings className="w-5 h-5 text-amber-500" />
-                <span>Google AdSense e Integrações Finais</span>
+                <span>Google AdSense e Monetização Global</span>
               </h3>
               <p className="text-neutral-400 mt-1">Configure parâmetros de monetização do portal, políticas de anúncios e aprovação.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* AdSense direct Toggle */}
-              <div className="bg-neutral-900/60 p-4 rounded border border-neutral-800 space-y-4">
-                <h4 className="text-xs font-sans font-bold text-amber-300 uppercase tracking-widest border-b border-neutral-800 pb-1.5">Regulamento Google AdSense</h4>
-                
-                <div className="flex items-center justify-between p-3 bg-neutral-950 rounded border border-neutral-850">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-white">Simulador de Anúncios Prontos</span>
-                    <p className="text-[10px] text-neutral-400">Ativa a exibição visual das vitrines simulando o adsense ao vivo nas páginas.</p>
+            <form onSubmit={handleSaveAds} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* AdSense parameters */}
+                <div className="bg-neutral-900/60 p-5 rounded border border-neutral-800 space-y-4">
+                  <h4 className="text-xs font-sans font-bold text-amber-300 uppercase tracking-widest border-b border-neutral-850 pb-2">Identificação AdSense</h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[11px] text-neutral-300 block mb-1 font-bold">Publisher ID (ID do Editor)</label>
+                      <input
+                        type="text"
+                        value={publisherId}
+                        onChange={(e) => setPublisherId(e.target.value)}
+                        placeholder="Ex: ca-pub-1234567890123456"
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white font-mono focus:outline-none focus:border-amber-500 text-xs"
+                      />
+                      <span className="text-[9px] text-neutral-500 block mt-1">Identificador de faturamento de seu portfólio.</span>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-neutral-300 block mb-1 font-bold">Código Global do AdSense (Script Cabeçalho)</label>
+                      <textarea
+                        rows={4}
+                        value={globalCode}
+                        onChange={(e) => setGlobalCode(e.target.value)}
+                        placeholder={`<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>`}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white font-mono focus:outline-none focus:border-amber-500 text-[10px] leading-relaxed"
+                      />
+                      <span className="text-[9px] text-neutral-500 block mt-1">Script asíncrono para validação das tags automáticas Google.</span>
+                    </div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={showSimulatedAds}
-                    onChange={onToggleAds}
-                    className="w-4 h-4 text-amber-500"
-                  />
                 </div>
 
-                <div className="text-neutral-300 space-y-2 leading-relaxed bg-neutral-950/40 p-3 rounded text-[11px] border border-neutral-850">
-                  <p className="font-bold text-amber-400">Boas práticas de monetização implementadas no portal:</p>
-                  <ul className="list-disc pl-4 space-y-1">
-                    <li>Componentes reutilizáveis sem scripts invasivos.</li>
-                    <li>Nenhum anúncio é exibido até o código oficial (`ca-pub-XXXXXXXXXX`) ser adicionado.</li>
-                    <li>Estrutura de páginas obrigatórias (Cookies/Privacidade) prontas no rodapé.</li>
-                    <li>Responsividade mobile garantida sem distorção nos layouts.</li>
-                  </ul>
-                </div>
-              </div>
+                {/* Switch Activation configuration */}
+                <div className="bg-neutral-900/60 p-5 rounded border border-neutral-800 space-y-4 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-sans font-bold text-white uppercase tracking-widest border-b border-neutral-850 pb-2">Controles de Exibição</h4>
+                    
+                    <div className="bg-neutral-950 p-4 rounded border border-neutral-850 space-y-4">
+                      <span className="font-bold text-white block">Ativar exibições de anúncios?</span>
+                      
+                      <div className="flex items-center gap-6">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs">
+                          <input
+                            type="radio"
+                            name="ads_enabled"
+                            checked={isEnabled === true}
+                            onChange={() => setIsEnabled(true)}
+                            className="w-4 h-4 text-amber-500 accent-amber-500"
+                          />
+                          <span className="font-bold text-white uppercase select-none">Sim</span>
+                        </label>
 
-              {/* Developer parameters */}
-              <div className="bg-neutral-900/60 p-4 rounded border border-neutral-800 space-y-3">
-                <h4 className="text-xs font-sans font-bold text-white uppercase tracking-widest border-b border-neutral-800 pb-1.5">Instruções Finais para Vercel & Supabase</h4>
-                <p className="text-neutral-300 leading-relaxed text-[11px]">
-                  Siga estas diretrizes ao hospedar seu portal no ambiente de produção:
-                </p>
-                <div className="space-y-2 bg-neutral-950 pr-2 p-3 rounded font-mono text-[10px] text-amber-200">
-                  <p>1. Importe os arquivos para sua conta GitHub.</p>
-                  <p>2. Crie um projeto na Vercel importando o repositório.</p>
-                  <p>3. Configure suas variáveis de ambiente secretas:</p>
-                  <p className="text-white ml-2">GEMINI_API_KEY="SuaChaveDoGeminiStudio"</p>
-                  <p className="text-white ml-2">NODE_ENV="production"</p>
-                  <p>4. Conecte sua string de conexão Supabase SQL para armazenamento contínuo.</p>
+                        <label className="flex items-center gap-2 cursor-pointer text-xs">
+                          <input
+                            type="radio"
+                            name="ads_enabled"
+                            checked={isEnabled === false}
+                            onChange={() => setIsEnabled(false)}
+                            className="w-4 h-4 text-amber-500 accent-amber-500"
+                          />
+                          <span className="font-bold text-white uppercase select-none">Não</span>
+                        </label>
+                      </div>
+
+                      <p className="text-[10px] text-neutral-400 leading-normal mt-2">
+                        Se definido como <strong className="text-red-400">Não</strong>, todos os blocos de anúncio somem por completo das páginas públicas. Nenhum espaço em branco, borda ou container de anúncio ficará visível ao leitor.
+                      </p>
+                    </div>
+
+                    <div className="text-[11px] text-neutral-400 leading-relaxed bg-neutral-950/40 p-3 rounded border border-neutral-850">
+                      <span className="font-bold text-amber-400">✨ Leitura Otimizada:</span>
+                      Sem blocos de anúncios configurados, as colunas do site se ajustam de modo excelente para uma jornada de leitura fidedigna e sem distrações visuais.
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mt-4">
+                    {saveSuccess && (
+                      <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded text-[11px] text-emerald-300 font-bold text-center flex items-center justify-center gap-1.5 animate-pulse">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Monetização salva e ativa!</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold py-2.5 rounded text-xs transition uppercase cursor-pointer"
+                    >
+                      Salvar Monetização
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </form>
           </div>
         )}
       </div>
