@@ -63,7 +63,18 @@ export default function App() {
   // --- CMS Admin Authentication states ---
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
     const saved = localStorage.getItem('mtv_admin_users');
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    // Garantir que o administrador existente permaneça e seja pré-carregado como padrão se o Storage estiver limpo
+    if (parsed.length === 0) {
+      const defaultAdmin: AdminUser = {
+        email: 'admin@memoriasdatv.com.br',
+        passwordHash: 'sbt90',
+        createdAt: new Date().toISOString()
+      };
+      localStorage.setItem('mtv_admin_users', JSON.stringify([defaultAdmin]));
+      return [defaultAdmin];
+    }
+    return parsed;
   });
 
   const [adminSession, setAdminSession] = useState<{ email: string; token: string; expiresAt: number } | null>(() => {
@@ -595,144 +606,66 @@ export default function App() {
         ) : currentView === 'login' ? (
           /* --- Login & Primeiro Admin CMS --- */
           <div className="max-w-md mx-auto my-12 bg-neutral-900 border border-neutral-800 rounded-xl p-6 sm:p-8 shadow-2xl space-y-6 text-white animate-scale-up text-xs">
-            {adminUsers.length === 0 ? (
-              <div className="space-y-5">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-amber-500/20">
-                    <ShieldEllipsis className="w-6 h-6 text-amber-400" />
-                  </div>
-                  <h2 className="text-base font-sans font-black uppercase tracking-wider text-white">Criar Primeiro Admin</h2>
-                  <p className="text-[11px] text-neutral-400 mt-1">
-                    Nenhum administrador registrado. Crie as credenciais securizadas de acesso ao CMS do portal Memórias da TV.
-                  </p>
+            <div className="space-y-5">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-amber-500/20">
+                  <ShieldEllipsis className="w-6 h-6 text-amber-400 animate-pulse" />
                 </div>
+                <h2 className="text-base font-sans font-black uppercase tracking-wider text-white">Login CMS Restrito</h2>
+                <p className="text-[11px] text-neutral-400 mt-1">Conecte-se com sua conta de administrador do portal.</p>
+              </div>
 
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  const target = e.target as any;
-                  const email = target.email.value.trim();
-                  const password = target.password.value;
-                  const confirmPassword = target.confirmPassword.value;
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const target = e.target as any;
+                const email = target.email.value.trim();
+                const password = target.password.value;
 
-                  if (!email || !password) return;
-                  if (password.length < 5) {
-                    alert('A senha deve conter ao menos 5 caracteres.');
-                    return;
-                  }
-                  if (password !== confirmPassword) {
-                    alert('As senhas não coincidem!');
-                    return;
-                  }
-
-                  const newUser: AdminUser = {
-                    email,
-                    passwordHash: password,
-                    createdAt: new Date().toISOString()
+                const matchedUser = adminUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.passwordHash === password);
+                
+                if (matchedUser) {
+                  const expires = Date.now() + 60 * 60 * 1000; // Sessão de 1 HORA
+                  const sessionData = {
+                    email: matchedUser.email,
+                    token: 'mtv_jwt_tkn_' + Math.random().toString(36).substring(2, 11),
+                    expiresAt: expires
                   };
-
-                  setAdminUsers([newUser]);
-                  alert('Administrador principal criado perfeitamente! Efetue o logon a seguir.');
-                }} className="space-y-3.5">
-                  <div>
-                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold">E-mail administrativo</label>
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      placeholder="Ex: portal@memoriasdatv.com.br"
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 font-mono text-center"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold">Senha de Acesso</label>
-                    <input
-                      type="password"
-                      name="password"
-                      required
-                      placeholder="Ao menos 5 caracteres..."
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 text-center"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold">Confirme a Senha</label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      required
-                      placeholder="Redigite a mesma senha..."
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 text-center"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold py-2.5 rounded text-xs transition uppercase cursor-pointer"
-                  >
-                    Registrar Administrador
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-amber-500/20">
-                    <ShieldEllipsis className="w-6 h-6 text-amber-400 animate-pulse" />
-                  </div>
-                  <h2 className="text-base font-sans font-black uppercase tracking-wider text-white">Login CMS Restrito</h2>
-                  <p className="text-[11px] text-neutral-400 mt-1">Conecte-se com sua conta administrativa de administrador do portal.</p>
+                  setAdminSession(sessionData);
+                  setAdminMode(true);
+                  setCurrentView('admin');
+                  window.scrollTo({ top: 0, behavior: 'instant' });
+                } else {
+                  alert('Usuário ou senha inválidos!');
+                }
+              }} className="space-y-4">
+                <div>
+                  <label className="text-[11px] text-neutral-400 block mb-1 font-bold font-sans">Endereço de E-mail</label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="Ex: portal@memoriasdatv.com.br"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 font-mono text-center text-xs"
+                  />
                 </div>
-
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  const target = e.target as any;
-                  const email = target.email.value.trim();
-                  const password = target.password.value;
-
-                  const matchedUser = adminUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.passwordHash === password);
-                  
-                  if (matchedUser) {
-                    const expires = Date.now() + 60 * 60 * 1000; // Sessão de 1 HORA
-                    const sessionData = {
-                      email: matchedUser.email,
-                      token: 'mtv_jwt_tkn_' + Math.random().toString(36).substring(2, 11),
-                      expiresAt: expires
-                    };
-                    setAdminSession(sessionData);
-                    setAdminMode(true);
-                    setCurrentView('admin');
-                    window.scrollTo({ top: 0, behavior: 'instant' });
-                  } else {
-                    alert('Usuário ou senha inválidos!');
-                  }
-                }} className="space-y-4">
-                  <div>
-                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold font-sans">Endereço de E-mail</label>
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      placeholder="Ex: portal@memoriasdatv.com.br"
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 font-mono text-center text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-neutral-400 block mb-1 font-bold font-sans">Senha</label>
-                    <input
-                      type="password"
-                      name="password"
-                      required
-                      placeholder="Sua senha secreta..."
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 text-center text-xs"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold py-2.5 rounded text-xs transition uppercase tracking-wide cursor-pointer"
-                  >
-                    Entrar
-                  </button>
-                </form>
-              </div>
-            )}
+                <div>
+                  <label className="text-[11px] text-neutral-400 block mb-1 font-bold font-sans">Senha</label>
+                  <input
+                    type="password"
+                    name="password"
+                    required
+                    placeholder="Sua senha secreta..."
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded p-2.5 text-white focus:outline-none focus:border-amber-500 text-center text-xs"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold py-2.5 rounded text-xs transition uppercase tracking-wide cursor-pointer"
+                >
+                  Entrar
+                </button>
+              </form>
+            </div>
 
             <div className="pt-3 border-t border-neutral-800 text-center">
               <button 

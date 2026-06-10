@@ -21,6 +21,11 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Bloqueio explícito de APIs de cadastro público de administradores ou usuários (Single Admin System)
+  app.post(["/register", "/signup", "/users/create", "/new-user", "/api/register", "/api/signup", "/api/users/create", "/api/new-user"], (req, res) => {
+    return res.status(403).json({ error: "Acesso não permitido. O cadastro de novos usuários está permanentemente desabilitado." });
+  });
+
   // API Route: Generate Article & Metadata with Gemini
   app.post("/api/ai/generate", async (req, res) => {
     const { keyword, category, focus } = req.body;
