@@ -64,12 +64,12 @@ export default function ArticleCard({ article, onClick, featured = false }: Card
           </p>
 
           <div className="flex items-center gap-2 mt-6 pt-5 border-t border-neutral-800">
-            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-xs font-bold font-mono">
-              {article.author.charAt(0)}
+            <div className="w-8 h-8 rounded-full bg-amber-400/5 border border-amber-500/10 flex items-center justify-center text-amber-400">
+              <BookOpen className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs text-neutral-300 font-bold leading-none">{article.author}</p>
-              <p className="text-[10px] text-neutral-500 mt-1 uppercase font-mono">Pesquisador Oficial</p>
+              <p className="text-xs text-neutral-300 font-bold leading-none">Memórias da TV</p>
+              <p className="text-[10px] text-neutral-500 mt-1 uppercase font-mono">Portal da Nostalgia</p>
             </div>
             
             <div className="ml-auto flex items-center gap-1.5 text-xs text-neutral-400 font-mono">
@@ -125,7 +125,7 @@ export default function ArticleCard({ article, onClick, featured = false }: Card
         </div>
 
         <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between">
-          <span className="text-[10px] text-neutral-400 font-bold">Por: {article.author}</span>
+          <span className="text-[10px] text-neutral-400 font-bold">Memórias da TV</span>
           <div className="flex items-center gap-3">
             <span className="text-[10px] text-[#9ab0d7] font-mono flex items-center gap-1">
               <Eye className="w-3" />

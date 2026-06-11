@@ -71,7 +71,7 @@ export default function ArticlesManager({
       setImage('https://images.unsplash.com/photo-1542204172-e7052809a86e?auto=format&fit=crop&q=80&w=600');
       setCategory(categories[0]?.name || 'Nostalgia');
       setTagsInput('SBT, Nostalgia, Anos 90');
-      setAuthor('Alexandre Costa');
+      setAuthor('Redação');
       setReadTime('5 min');
       setIsDraft(false);
       setScheduledDate('');
@@ -367,16 +367,7 @@ export default function ArticlesManager({
                 </select>
               </div>
 
-              <div>
-                <label className="text-neutral-450 block mb-1">Autor / Pesquisador Assinante</label>
-                <input
-                  type="text"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  required
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded p-2 text-xs text-white font-bold"
-                />
-              </div>
+
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -480,7 +471,6 @@ export default function ArticlesManager({
                 <tr className="border-b border-neutral-800 text-neutral-400">
                   <th className="py-2.5 px-2">Título</th>
                   <th className="py-2.5">Categoria</th>
-                  <th className="py-2.5">Autor</th>
                   <th className="py-2.5">Status</th>
                   <th className="py-2.5">Acessos</th>
                   <th className="py-2.5 text-right px-2">Ações</th>
@@ -493,7 +483,6 @@ export default function ArticlesManager({
                     <td className="py-3">
                       <span className="px-2 py-0.5 rounded text-[10px] bg-neutral-900 text-amber-400 border border-neutral-800 font-mono font-bold uppercase">{art.category}</span>
                     </td>
-                    <td className="py-3 text-neutral-300 font-mono text-[11px]">{art.author}</td>
                     <td className="py-3">
                       {art.isFeatured && (
                         <span className="bg-amber-400 text-neutral-950 font-sans px-2 py-0.5 rounded text-[9px] font-extrabold uppercase mr-1.5">Destaque</span>

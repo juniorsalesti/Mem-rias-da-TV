@@ -705,14 +705,9 @@ export default function App() {
                   {activeArticle.title}
                 </h1>
 
-                {/* Author description row */}
+                {/* Metadata row */}
                 <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-400 font-mono border-y border-neutral-800/80 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
-                      {activeArticle.author.charAt(0)}
-                    </span>
-                    <span className="text-neutral-200 font-bold">Por: {activeArticle.author}</span>
-                  </div>
+                  <span className="text-amber-400 font-bold">Memórias da TV</span>
                   <span>•</span>
                   <span>Publicado em: {activeArticle.date}</span>
                   <span>•</span>

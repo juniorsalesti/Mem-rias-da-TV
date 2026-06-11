@@ -99,7 +99,7 @@ export default function AIPostGenerator({ categories, onAdoptArticle }: AIPostGe
       content: rawArticle.content,
       // Random illustrative unsplash image
       image: 'https://images.unsplash.com/photo-1542204172-e7052809a86e?auto=format&fit=crop&q=80&w=600',
-      author: 'Suporte de IA',
+      author: 'Redação',
       date: new Date().toISOString().split('T')[0],
       category: rawArticle.category || category,
       tags: rawArticle.tags || [keyword, "IA"],
